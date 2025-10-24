@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
   try {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001'
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://rps-test-new-bb138c85073f.herokuapp.com'
     
     const response = await fetch(`${backendUrl}/api/games/stats`, {
       method: 'GET',

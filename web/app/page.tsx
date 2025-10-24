@@ -853,7 +853,7 @@ export default function RockPaperScissorsGame() {
             
             // First, validate the game still exists on the server
             try {
-              const response = await fetch(`http://localhost:3001/api/games/${sessionData.gameState.gameId}`)
+              const response = await fetch(`https://rps-test-new-bb138c85073f.herokuapp.com/api/games/${sessionData.gameState.gameId}`)
               const data = await response.json()
               
               if (data.success && data.game) {
@@ -1167,7 +1167,7 @@ export default function RockPaperScissorsGame() {
     }
     
     try {
-      const response = await fetch(`http://localhost:3001/api/games/${gameId}`)
+      const response = await fetch(`https://rps-test-new-bb138c85073f.herokuapp.com/api/games/${gameId}`)
       const data = await response.json()
       
       if (data.success && data.game) {

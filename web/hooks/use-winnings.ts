@@ -25,8 +25,8 @@ interface UseWinningsReturn extends UseWinningsState {
 }
 
 const API_BASE_URL = process.env.NODE_ENV === 'production'
-  ? 'http://localhost:3001'
-  : 'http://localhost:3001'
+  ? 'https://rps-test-new-bb138c85073f.herokuapp.com'
+  : 'https://rps-test-new-bb138c85073f.herokuapp.com'
 
 export const useWinnings = (limit: number = 20): UseWinningsReturn => {
   const [state, setState] = useState<UseWinningsState>({

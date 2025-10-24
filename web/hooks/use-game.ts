@@ -55,7 +55,7 @@ export const useGame = (options: UseGameOptions = {}) => {
   const { publicKey, connected, sendTransaction } = wallet
   const { connection } = useConnection()
   const socket = useSocket({
-    url: 'http://localhost:3001',
+    url: 'https://rps-test-new-bb138c85073f.herokuapp.com',
     onConnect: () => {
       console.log('🔌 WebSocket connected to game server')
     },
@@ -652,7 +652,7 @@ export const useGame = (options: UseGameOptions = {}) => {
         
         // First, get the game details to check if it's a SOL game
         console.log('📡 Fetching game details from backend...')
-        const response = await fetch(`http://localhost:3001/api/games/${gameId}`)
+        const response = await fetch(`https://rps-test-new-bb138c85073f.herokuapp.com/api/games/${gameId}`)
         const gameData = await response.json()
         
         console.log('📦 Game data received:', gameData)

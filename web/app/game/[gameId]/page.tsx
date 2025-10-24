@@ -27,7 +27,7 @@ export default function GamePage({ params }: GamePageProps) {
       
       // Validate game exists by calling backend API
       try {
-        const response = await fetch(`http://localhost:3001/api/games/${gameId}`)
+        const response = await fetch(`https://rps-test-new-bb138c85073f.herokuapp.com/api/games/${gameId}`)
         const data = await response.json()
         
         if (!data.success || !data.game) {

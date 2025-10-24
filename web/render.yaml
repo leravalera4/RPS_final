@@ -16,7 +16,7 @@ services:
       - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
         sync: false
       - key: NEXT_PUBLIC_BACKEND_URL
-        value: http://localhost:3001
+        value: https://rps-test-new-bb138c85073f.herokuapp.com
       - key: NEXT_PUBLIC_MAGICBLOCK_DEVNET_URL
         value: https://devnet.magicblock.app
       - key: NEXT_PUBLIC_MAGICBLOCK_ROUTER_URL

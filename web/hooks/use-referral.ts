@@ -23,8 +23,8 @@ interface UseReferralReturn extends UseReferralState {
 }
 
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'http://localhost:3001' 
-  : 'http://localhost:3001'
+  ? 'https://rps-test-new-bb138c85073f.herokuapp.com' 
+  : 'https://rps-test-new-bb138c85073f.herokuapp.com'
 
 export const useReferral = (): UseReferralReturn => {
   const { publicKey, connected } = useWallet()

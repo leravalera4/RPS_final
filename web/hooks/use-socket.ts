@@ -17,7 +17,7 @@ export interface UseSocketOptions {
 
 export const useSocket = (options: UseSocketOptions = {}) => {
   const {
-    url = 'http://localhost:3001', // Backend server URL
+    url = 'https://rps-test-new-bb138c85073f.herokuapp.com', // Backend server URL
     onConnect,
     onDisconnect,
     onError,
