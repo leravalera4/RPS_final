@@ -6,7 +6,7 @@
 const io = require('socket.io-client');
 
 // Test configuration
-const SERVER_URL = 'http://localhost:3001';
+const SERVER_URL = 'https://rps-test-new-bb138c85073f.herokuapp.com';
 const TEST_TIMEOUT = 10000; // 10 seconds
 
 /**
