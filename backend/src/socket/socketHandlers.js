@@ -622,19 +622,77 @@ function handleSocketConnection(socket, io) {
         socket.emit('game_joined', result);
         socket.to(gameId).emit('player_joined', result);
         
-        // If both players are present and game is ready to start, emit game_started and start timer
+        // If both players are present and game is ready to start
         if (
           result.gameState &&
           result.gameState.player1 &&
           result.gameState.player2 &&
           result.gameState.gameStatus === 'playing'
         ) {
-          io.to(gameId).emit('game_started', {
-            gameId,
-            gameState: result.gameState
-          });
-          // Start the first round timer immediately
-          startRoundTimer(gameId, io, 15);
+          // For SOL private games, wait for both on-chain transactions before starting
+          if (result.gameState.currency === 'sol' && result.gameState.gameType === 'private') {
+            console.log('🔗 SOL private game - emitting pre-tx event and waiting for both transactions...');
+            
+            const gameState = result.gameState;
+            const onchainCompleted = {
+              player1: false,
+              player2: false
+            };
+            
+            // Emit pre-transaction event to trigger on-chain setup
+            io.to(gameId).emit('game_started_pre_tx', {
+              gameId,
+              gameState: gameState
+            });
+            
+            // Listen for on-chain completion events
+            socket.on('onchain_game_created', (data) => {
+              if (data.gameId === gameId) {
+                onchainCompleted.player1 = true;
+                console.log('✅ Player 1 on-chain game created');
+                checkAndStartGame();
+              }
+            });
+            
+            socket.on('onchain_game_joined', (data) => {
+              if (data.gameId === gameId) {
+                onchainCompleted.player2 = true;
+                console.log('✅ Player 2 on-chain game joined');
+                checkAndStartGame();
+              }
+            });
+            
+            function checkAndStartGame() {
+              if (onchainCompleted.player1 && onchainCompleted.player2) {
+                console.log('🚀 Both players completed on-chain setup, starting game...');
+                
+                // Emit game_started to all players
+                io.to(gameId).emit('game_started', {
+                  gameId,
+                  gameState: gameState
+                });
+                
+                // Start the first round timer
+                setTimeout(() => {
+                  startRoundTimer(gameId, io, 30); // Longer timer for first round
+                }, 2000);
+                
+                // Clean up listeners
+                socket.off('onchain_game_created');
+                socket.off('onchain_game_joined');
+              }
+            }
+          } else {
+            // For points games or public games, start immediately
+            io.to(gameId).emit('game_started', {
+              gameId,
+              gameState: result.gameState
+            });
+            
+            setTimeout(() => {
+              startRoundTimer(gameId, io, 15);
+            }, 1000);
+          }
         }
 
         console.log(`Player ${playerId} joined game ${gameId}`);
@@ -690,15 +748,65 @@ function handleSocketConnection(socket, io) {
 
         // If game started immediately (matched with waiting player)
         if (result.gameStarted) {
-          io.to(result.gameId).emit('game_started', {
+          const gameState = result.gameState;
+          
+          // Emit separate events for each player to create/join on-chain
+          // This ensures sequential execution and prevents race conditions
+          io.to(gameState.player1.socketId).emit('create_onchain_game', {
             gameId: result.gameId,
-            gameState: result.gameState
+            stakeAmount: gameState.stakeAmount,
+            currency: gameState.currency,
+            gameState: gameState
           });
           
-          // Start the first round timer
-          setTimeout(() => {
-            startRoundTimer(result.gameId, io, 15);
-          }, 1000);
+          io.to(gameState.player2.socketId).emit('join_onchain_game', {
+            gameId: result.gameId,
+            gameState: gameState
+          });
+          
+          // Track on-chain completion for both players
+          const onchainCompleted = {
+            player1: false,
+            player2: false
+          };
+          
+          // Listen for on-chain completion events
+          socket.on('onchain_game_created', (data) => {
+            if (data.gameId === result.gameId) {
+              onchainCompleted.player1 = true;
+              console.log('✅ Player 1 on-chain game created');
+              checkAndStartGame();
+            }
+          });
+          
+          socket.on('onchain_game_joined', (data) => {
+            if (data.gameId === result.gameId) {
+              onchainCompleted.player2 = true;
+              console.log('✅ Player 2 on-chain game joined');
+              checkAndStartGame();
+            }
+          });
+          
+          function checkAndStartGame() {
+            if (onchainCompleted.player1 && onchainCompleted.player2) {
+              console.log('🚀 Both players completed on-chain setup, starting game...');
+              
+              // Emit game_started to all players
+              io.to(result.gameId).emit('game_started', {
+                gameId: result.gameId,
+                gameState: gameState
+              });
+              
+              // Start the first round timer
+              setTimeout(() => {
+                startRoundTimer(result.gameId, io, 15);
+              }, 1000);
+              
+              // Clean up listeners
+              socket.off('onchain_game_created');
+              socket.off('onchain_game_joined');
+            }
+          }
         }
       } else {
         console.log('Random match failed:', result.error);

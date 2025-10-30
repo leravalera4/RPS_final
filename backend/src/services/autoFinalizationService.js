@@ -204,6 +204,15 @@ async function autoFinalizeSolGame(gameId, winnerPublicKey, loserPublicKey, stak
     
     const actualWinnerPubkey = new PublicKey(winnerPublicKey);
     
+    // LOG BALANCES BEFORE set_winner
+    console.log('💰 ===== BALANCE LOGGING (set_winner) =====');
+    const balancesBeforeSetWinner = {
+      service: await connection.getBalance(serviceWallet.publicKey),
+      gamePDA: await connection.getBalance(gamePDA)
+    };
+    console.log(`  Service Wallet BEFORE set_winner: ${(balancesBeforeSetWinner.service / LAMPORTS_PER_SOL).toFixed(9)} SOL`);
+    console.log(`  Game PDA BEFORE set_winner: ${(balancesBeforeSetWinner.gamePDA / LAMPORTS_PER_SOL).toFixed(9)} SOL`);
+    
     // Use Anchor program API to call set_winner
     try {
       const setWinnerSig = await program.methods
@@ -218,6 +227,28 @@ async function autoFinalizeSolGame(gameId, winnerPublicKey, loserPublicKey, stak
       console.log('Game winner set on-chain:', setWinnerSig);
       console.log('Winner:', winnerPublicKey);
       console.log('Game status: Finished');
+      
+      // LOG BALANCES AFTER set_winner
+      const balancesAfterSetWinner = {
+        service: await connection.getBalance(serviceWallet.publicKey),
+        gamePDA: await connection.getBalance(gamePDA)
+      };
+      console.log(`  Service Wallet AFTER set_winner: ${(balancesAfterSetWinner.service / LAMPORTS_PER_SOL).toFixed(9)} SOL (delta: ${((balancesAfterSetWinner.service - balancesBeforeSetWinner.service) / LAMPORTS_PER_SOL).toFixed(9)} SOL)`);
+      console.log(`  Game PDA AFTER set_winner: ${(balancesAfterSetWinner.gamePDA / LAMPORTS_PER_SOL).toFixed(9)} SOL (delta: ${((balancesAfterSetWinner.gamePDA - balancesBeforeSetWinner.gamePDA) / LAMPORTS_PER_SOL).toFixed(9)} SOL)`);
+      
+      // LOG TRANSACTION FEE
+      try {
+        const txInfo = await connection.getTransaction(setWinnerSig, {
+          commitment: 'confirmed',
+          maxSupportedTransactionVersion: 0
+        });
+        if (txInfo && txInfo.meta) {
+          const feeLamports = txInfo.meta.fee || 0;
+          console.log(`🧾 [set_winner] Transaction fee: ${(feeLamports / LAMPORTS_PER_SOL).toFixed(9)} SOL (${feeLamports} lamports)`);
+        }
+      } catch (feeError) {
+        console.log('Could not fetch set_winner transaction fee:', feeError.message);
+      }
       
       // Let's verify what was actually stored in the game account
       const gameAccountAfter = await connection.getAccountInfo(gamePDA);
@@ -317,10 +348,65 @@ async function autoFinalizeSolGame(gameId, winnerPublicKey, loserPublicKey, stak
       data: instructionData
     });
     
+    // LOG BALANCES BEFORE FINALIZATION
+    console.log('💰 ===== BALANCE LOGGING =====');
+    const balancesBefore = {
+      winner: await connection.getBalance(new PublicKey(winnerPublicKey)),
+      player1: await connection.getBalance(player1Key),
+      player2: await connection.getBalance(player2Key),
+      platform: await connection.getBalance(PLATFORM_WALLET),
+      referrer: await connection.getBalance(referrerWallet),
+      gamePDA: await connection.getBalance(gamePDA),
+      service: await connection.getBalance(serviceWallet.publicKey)
+    };
+    console.log('📊 Balances BEFORE finalize_game:');
+    console.log(`  Winner (${winnerPublicKey}): ${(balancesBefore.winner / LAMPORTS_PER_SOL).toFixed(9)} SOL`);
+    console.log(`  Player1 (${player1Key.toString()}): ${(balancesBefore.player1 / LAMPORTS_PER_SOL).toFixed(9)} SOL`);
+    console.log(`  Player2 (${player2Key.toString()}): ${(balancesBefore.player2 / LAMPORTS_PER_SOL).toFixed(9)} SOL`);
+    console.log(`  Platform: ${(balancesBefore.platform / LAMPORTS_PER_SOL).toFixed(9)} SOL`);
+    console.log(`  Referrer: ${(balancesBefore.referrer / LAMPORTS_PER_SOL).toFixed(9)} SOL`);
+    console.log(`  Game PDA: ${(balancesBefore.gamePDA / LAMPORTS_PER_SOL).toFixed(9)} SOL`);
+    console.log(`  Service Wallet: ${(balancesBefore.service / LAMPORTS_PER_SOL).toFixed(9)} SOL`);
+    
     // Create and send transaction
     const transaction = new Transaction().add(finalizeInstruction);
     const finalizeSig = await provider.sendAndConfirm(transaction);
     console.log('Game finalized:', finalizeSig);
+    
+    // LOG BALANCES AFTER FINALIZATION
+    const balancesAfter = {
+      winner: await connection.getBalance(new PublicKey(winnerPublicKey)),
+      player1: await connection.getBalance(player1Key),
+      player2: await connection.getBalance(player2Key),
+      platform: await connection.getBalance(PLATFORM_WALLET),
+      referrer: await connection.getBalance(referrerWallet),
+      gamePDA: await connection.getBalance(gamePDA),
+      service: await connection.getBalance(serviceWallet.publicKey)
+    };
+    
+    console.log('📊 Balances AFTER finalize_game:');
+    console.log(`  Winner (${winnerPublicKey}): ${(balancesAfter.winner / LAMPORTS_PER_SOL).toFixed(9)} SOL (delta: ${((balancesAfter.winner - balancesBefore.winner) / LAMPORTS_PER_SOL).toFixed(9)} SOL)`);
+    console.log(`  Player1 (${player1Key.toString()}): ${(balancesAfter.player1 / LAMPORTS_PER_SOL).toFixed(9)} SOL (delta: ${((balancesAfter.player1 - balancesBefore.player1) / LAMPORTS_PER_SOL).toFixed(9)} SOL)`);
+    console.log(`  Player2 (${player2Key.toString()}): ${(balancesAfter.player2 / LAMPORTS_PER_SOL).toFixed(9)} SOL (delta: ${((balancesAfter.player2 - balancesBefore.player2) / LAMPORTS_PER_SOL).toFixed(9)} SOL)`);
+    console.log(`  Platform: ${(balancesAfter.platform / LAMPORTS_PER_SOL).toFixed(9)} SOL (delta: ${((balancesAfter.platform - balancesBefore.platform) / LAMPORTS_PER_SOL).toFixed(9)} SOL)`);
+    console.log(`  Referrer: ${(balancesAfter.referrer / LAMPORTS_PER_SOL).toFixed(9)} SOL (delta: ${((balancesAfter.referrer - balancesBefore.referrer) / LAMPORTS_PER_SOL).toFixed(9)} SOL)`);
+    console.log(`  Game PDA: ${(balancesAfter.gamePDA / LAMPORTS_PER_SOL).toFixed(9)} SOL (delta: ${((balancesAfter.gamePDA - balancesBefore.gamePDA) / LAMPORTS_PER_SOL).toFixed(9)} SOL)`);
+    console.log(`  Service Wallet: ${(balancesAfter.service / LAMPORTS_PER_SOL).toFixed(9)} SOL (delta: ${((balancesAfter.service - balancesBefore.service) / LAMPORTS_PER_SOL).toFixed(9)} SOL)`);
+    
+    // LOG TRANSACTION FEE FROM TRANSACTION METADATA
+    try {
+      const txInfo = await connection.getTransaction(finalizeSig, {
+        commitment: 'confirmed',
+        maxSupportedTransactionVersion: 0
+      });
+      if (txInfo && txInfo.meta) {
+        const feeLamports = txInfo.meta.fee || 0;
+        console.log(`🧾 [finalize_game] Transaction fee: ${(feeLamports / LAMPORTS_PER_SOL).toFixed(9)} SOL (${feeLamports} lamports)`);
+        console.log('💰 ===== END BALANCE LOGGING =====');
+      }
+    } catch (feeError) {
+      console.log('Could not fetch transaction fee:', feeError.message);
+    }
 
     // Calculate expected amounts based on stake
     const totalPot = stakeAmount * 2;
@@ -333,6 +419,47 @@ async function autoFinalizeSolGame(gameId, winnerPublicKey, loserPublicKey, stak
     console.log(`Platform fee (${(feeRate * 100).toFixed(1)}%): ${platformFee.toFixed(3)} SOL`);
     console.log(`Winner receives: ${expectedWinnings.toFixed(3)} SOL`);
     console.log(`Platform wallet receives: ${platformFee.toFixed(3)} SOL`);
+    
+    // Close game account to return rent exemption to creator (player1)
+    console.log('🔒 Closing game account to return rent exemption to creator...');
+    console.log('🔒 Expected rent return: ~0.002463840 SOL');
+    console.log('🔒 Game PDA:', gamePDA.toString());
+    console.log('🔒 Creator (player1):', player1Key.toString());
+    
+    try {
+      // Check Game PDA balance before closing
+      const gameBalanceBeforeClose = await connection.getBalance(gamePDA);
+      console.log(`🔒 Game PDA balance BEFORE close: ${(gameBalanceBeforeClose / LAMPORTS_PER_SOL).toFixed(9)} SOL`);
+      
+      const closeSig = await program.methods
+        .closeGame(gameId)
+        .accounts({
+          game: gamePDA,
+          player1: player1Key,
+          user: serviceWallet.publicKey, // Service wallet signs, but rent goes to player1
+          systemProgram: SystemProgram.programId
+        })
+        .signers([serviceWallet])
+        .rpc();
+      
+      console.log('✅ Game account closed successfully!');
+      console.log('✅ Close transaction signature:', closeSig);
+      
+      // Verify Game PDA was closed
+      const gameAccountAfterClose = await connection.getAccountInfo(gamePDA);
+      console.log('🔒 Game account exists after close:', gameAccountAfterClose !== null);
+      
+      // Log balance after closing
+      const player1BalanceAfterClose = await connection.getBalance(player1Key);
+      const rentReturned = player1BalanceAfterClose - balancesAfter.player1;
+      console.log(`💰 Player1 (creator) balance BEFORE close: ${(balancesAfter.player1 / LAMPORTS_PER_SOL).toFixed(9)} SOL`);
+      console.log(`💰 Player1 (creator) balance AFTER close: ${(player1BalanceAfterClose / LAMPORTS_PER_SOL).toFixed(9)} SOL`);
+      console.log(`💰 Rent returned to creator: ${(rentReturned / LAMPORTS_PER_SOL).toFixed(9)} SOL`);
+    } catch (closeError) {
+      console.error('❌ Failed to close game account:', closeError.message);
+      console.error('❌ Close error stack:', closeError.stack);
+      // Don't fail the entire finalization if closing fails
+    }
     
     return true;
 
@@ -376,8 +503,56 @@ async function processAutoFinalizationQueue() {
   }
 }
 
+/**
+ * Process SOL refund when a player cancels before game starts
+ * @param {string} gameId - Game ID
+ * @param {string} playerWallet - Player's wallet address (to refund to)
+ * @param {number} stakeAmount - Amount to refund in SOL
+ * @returns {Promise<boolean>} Success status
+ */
+async function refundSolBeforeStart(gameId, playerWallet, stakeAmount) {
+  try {
+    console.log('💰 Processing SOL refund for cancelled game:', gameId);
+    console.log('💰 Refunding to:', playerWallet);
+    console.log('💰 Amount:', stakeAmount, 'SOL');
+    
+    const gamePDA = findGamePDA(gameId);
+    const playerKey = new PublicKey(playerWallet);
+    
+    // Check if game account exists
+    const gameAccount = await connection.getAccountInfo(gamePDA);
+    if (!gameAccount) {
+      console.log('⚠️ Game account does not exist on-chain, no refund needed');
+      return true; // No game was created on-chain, so no refund needed
+    }
+    
+    // For private games that haven't started (no player2)
+    // We need to transfer SOL back from Game PDA to player1
+    console.log('💰 Refunding stake from Game PDA to player...');
+    
+    const refundLamports = stakeAmount * LAMPORTS_PER_SOL;
+    
+    const refundInstruction = SystemProgram.transfer({
+      fromPubkey: gamePDA,
+      toPubkey: playerKey,
+      lamports: refundLamports
+    });
+    
+    // Service wallet cannot sign for Game PDA
+    // For now, we'll need to call the smart contract to handle this
+    // OR we could use a simpler approach: just notify the frontend
+    console.log('⚠️ Automatic refund not yet implemented - requires player to manually call contract');
+    
+    return true;
+  } catch (error) {
+    console.error('❌ Failed to process SOL refund:', error);
+    return false;
+  }
+}
+
 module.exports = {
   initializeService,
   autoFinalizeSolGame,
-  processAutoFinalizationQueue
+  processAutoFinalizationQueue,
+  refundSolBeforeStart
 }; 

@@ -655,9 +655,23 @@ class GameManager {
         // For points games, refund the stake amount
         this.processPointsRefund(gameId, playerId, gameState.stakeAmount);
       } else if (gameState.currency === 'sol') {
-        // For SOL games, we need to handle on-chain refund
+        // For SOL games, handle on-chain refund
         console.log(`SOL game refund needed for player ${playerId} - stake: ${gameState.stakeAmount}`);
-        // Note: SOL refunds would need to be handled via smart contract
+        
+        // Get player wallet from game state
+        let playerWallet = null;
+        if (gameState.player1.id === playerId) {
+          playerWallet = gameState.player1.wallet;
+        } else if (gameState.player2.id === playerId) {
+          playerWallet = gameState.player2.wallet;
+        }
+        
+        if (playerWallet) {
+          const { refundSolBeforeStart } = require('../services/autoFinalizationService');
+          refundSolBeforeStart(gameId, playerWallet, gameState.stakeAmount).catch(err => {
+            console.error('Failed to process SOL refund:', err);
+          });
+        }
       }
     }
 

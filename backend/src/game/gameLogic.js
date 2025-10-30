@@ -51,7 +51,7 @@ function createGameState(gameId, gameType = 'private', stakeAmount = 0, currency
   // For SOL games, apply dynamic platform fee based on stake amount
   if (currency === 'sol') {
     const feeRate = stakeAmount <= 0.01 ? 0.05 : stakeAmount <= 0.05 ? 0.03 : 0.02;
-    platformFee = Math.floor(stakeAmount * 2 * feeRate);
+    platformFee = stakeAmount * 2 * feeRate; // Remove Math.floor for SOL calculations
     winnerPayout = (stakeAmount * 2) - platformFee;
   }
   

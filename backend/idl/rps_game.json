@@ -9,6 +9,10 @@
   "instructions": [
     {
       "name": "cancel_game",
+      "docs": [
+        "Cancel game and refund SOL to player (when game hasn't started)",
+        "Can only be called by player1 (creator) when player2 hasn't joined yet"
+      ],
       "discriminator": [
         121,
         194,
@@ -45,6 +49,71 @@
           "name": "user",
           "writable": true,
           "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "_game_id",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "close_game",
+      "docs": [
+        "Close game account and return rent to creator (player1)",
+        "Can be called by service wallet after finalization or by creator"
+      ],
+      "discriminator": [
+        237,
+        236,
+        157,
+        201,
+        253,
+        20,
+        248,
+        67
+      ],
+      "accounts": [
+        {
+          "name": "game",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  97,
+                  109,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "game_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "player1",
+          "writable": true
+        },
+        {
+          "name": "user",
+          "docs": [
+            "Service wallet or creator can sign this transaction"
+          ],
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -452,40 +521,6 @@
           }
         },
         {
-          "name": "player1_profile",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  117,
-                  115,
-                  101,
-                  114,
-                  95,
-                  112,
-                  114,
-                  111,
-                  102,
-                  105,
-                  108,
-                  101
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "game.player1",
-                "account": "Game"
-              }
-            ]
-          }
-        },
-        {
-          "name": "player1",
-          "writable": true
-        },
-        {
           "name": "user",
           "writable": true,
           "signer": true
@@ -864,48 +899,43 @@
     },
     {
       "code": 6012,
+      "name": "GameAlreadyStarted",
+      "msg": "Game already started"
+    },
+    {
+      "code": 6013,
       "name": "NoWinner",
       "msg": "No winner"
     },
     {
-      "code": 6013,
+      "code": 6014,
       "name": "InsufficientPoints",
       "msg": "Insufficient points"
     },
     {
-      "code": 6014,
+      "code": 6015,
       "name": "InsufficientSol",
       "msg": "Insufficient SOL"
     },
     {
-      "code": 6015,
+      "code": 6016,
       "name": "InvalidCommitment",
       "msg": "Invalid commitment"
     },
     {
-      "code": 6016,
+      "code": 6017,
       "name": "InvalidReferralCode",
       "msg": "Invalid referral code"
     },
     {
-      "code": 6017,
+      "code": 6018,
       "name": "CannotReferYourself",
       "msg": "Cannot refer yourself"
     },
     {
-      "code": 6018,
+      "code": 6019,
       "name": "ReferrerAlreadySet",
       "msg": "Referrer already set"
-    },
-    {
-      "code": 6019,
-      "name": "UnauthorizedAction",
-      "msg": "Unauthorized action"
-    },
-    {
-      "code": 6020,
-      "name": "GameNotCancellable",
-      "msg": "Game not cancellable"
     }
   ],
   "types": [

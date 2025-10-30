@@ -21,7 +21,7 @@ function useSimpleMove() {
     console.log('🔥 Using simple move backend fallback for:', { gameId, playerId, move });
     
     // Create a fresh socket connection just for this move
-    const socket = io('https://rps-test-new-bb138c85073f.herokuapp.com', {
+    const socket = io('http://localhost:3001', {
       transports: ['polling', 'websocket'],
       timeout: 5000,
       forceNew: true, // Always create a new connection
@@ -60,7 +60,7 @@ function useSimpleMove() {
     console.log('🚪 Using fresh socket to leave game:', { gameId, playerId });
     
     // Create a fresh socket connection just for leaving
-    const socket = io('https://rps-test-new-bb138c85073f.herokuapp.com', {
+    const socket = io('http://localhost:3001', {
       transports: ['polling', 'websocket'],
       timeout: 5000,
       forceNew: true, // Always create a new connection
